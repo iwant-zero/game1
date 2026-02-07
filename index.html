@@ -2,325 +2,889 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>댓글 전쟁 시뮬</title>
-
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>Canvas Tetris Online</title>
 <style>
-:root{
-  --bg:#0b0f17; --panel:#121a27; --line:#223049;
-  --text:#e7eefc; --muted:#9bb0d0;
-  --red:#fb7185; --blue:#60a5fa; --green:#34d399; --yellow:#fbbf24;
-  --shadow:0 14px 34px rgba(0,0,0,.35);
-  --r:18px;
-}
-*{box-sizing:border-box}
-body{
-  margin:0; color:var(--text);
-  font-family: system-ui,"Noto Sans KR","맑은 고딕";
-  background:
-    radial-gradient(1200px 700px at 20% 0%, rgba(96,165,250,.25), transparent 60%),
-    radial-gradient(900px 600px at 90% 15%, rgba(52,211,153,.18), transparent 55%),
-    var(--bg);
-}
-.wrap{max-width:1100px;margin:0 auto;padding:16px}
-header{
-  display:flex;justify-content:space-between;align-items:center;
-  margin-bottom:12px
-}
-.logo{
-  width:44px;height:44px;border-radius:14px;
-  background:linear-gradient(145deg,#60a5fa,#34d399);
-  display:grid;place-items:center;font-weight:900
-}
-h1{margin:0;font-size:18px}
-.sub{font-size:12px;color:var(--muted)}
+  :root{
+    --bg:#0b0f17; --panel:#121a27; --line:#223049;
+    --text:#e7eefc; --muted:#9bb0d0;
+    --shadow:0 14px 34px rgba(0,0,0,.35); --r:18px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; color:var(--text);
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", "맑은 고딕", sans-serif;
+    background:
+      radial-gradient(1200px 700px at 20% 0%, rgba(96,165,250,.25), transparent 60%),
+      radial-gradient(900px 600px at 90% 15%, rgba(52,211,153,.18), transparent 55%),
+      radial-gradient(900px 600px at 60% 100%, rgba(251,113,133,.14), transparent 55%),
+      var(--bg);
+    overscroll-behavior: none;
+    touch-action: manipulation;
+  }
+  .wrap{max-width:1100px; margin:0 auto; padding:14px}
+  header{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    margin:10px 0 12px;
+  }
+  .brand{display:flex; align-items:center; gap:10px}
+  .logo{
+    width:44px; height:44px; border-radius:14px;
+    background: linear-gradient(145deg, rgba(96,165,250,.9), rgba(52,211,153,.85));
+    display:grid; place-items:center; font-weight:900;
+    box-shadow: var(--shadow);
+  }
+  h1{margin:0; font-size:18px}
+  .sub{font-size:12px; color:var(--muted); margin-top:2px}
+  .top{display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end}
+  button{
+    border:1px solid var(--line);
+    background: rgba(18,26,39,.78);
+    color:var(--text);
+    padding:10px 12px; border-radius:14px;
+    cursor:pointer; user-select:none;
+    transition:.15s transform,.15s filter;
+  }
+  button:hover{filter:brightness(1.06)}
+  button:active{transform:translateY(1px) scale(.99)}
+  .btn-accent{border-color: rgba(96,165,250,.55); background: linear-gradient(145deg, rgba(96,165,250,.35), rgba(18,26,39,.85))}
+  .btn-good{border-color: rgba(52,211,153,.55); background: linear-gradient(145deg, rgba(52,211,153,.28), rgba(18,26,39,.85))}
+  .btn-warn{border-color: rgba(251,191,36,.55); background: linear-gradient(145deg, rgba(251,191,36,.22), rgba(18,26,39,.85))}
+  .grid{display:grid; grid-template-columns: 1.1fr .9fr; gap:14px}
+  @media (max-width:980px){ .grid{grid-template-columns:1fr} }
 
-.grid{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}
-@media(max-width:900px){.grid{grid-template-columns:1fr}}
-
-.card{
-  background:rgba(18,26,39,.95);
-  border:1px solid var(--line);
-  border-radius:var(--r);
-  box-shadow:var(--shadow);
-  padding:12px
-}
-
-.stats{display:flex;gap:10px;flex-wrap:wrap}
-.stat{
-  flex:1;background:rgba(0,0,0,.18);
-  border:1px solid rgba(255,255,255,.06);
-  border-radius:14px;padding:8px 10px
-}
-.k{font-size:12px;color:var(--muted)}
-.v{font-size:18px;font-weight:900}
-
-.bar{
-  height:14px;border-radius:999px;
-  background:#111;border:1px solid #333;
-  overflow:hidden;margin-top:6px
-}
-.fill{
-  height:100%;width:50%;
-  background:linear-gradient(90deg,#60a5fa,#34d399)
-}
-
-.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
-
-.cardBtn{
-  background:rgba(0,0,0,.2);
-  border:1px solid #333;border-radius:14px;
-  padding:10px;text-align:center;
-  cursor:pointer;transition:.15s
-}
-.cardBtn:hover{transform:translateY(-2px);filter:brightness(1.1)}
-.cardBtn b{display:block;margin-bottom:4px}
-
-.red{color:var(--red)}
-.blue{color:var(--blue)}
-.green{color:var(--green)}
-.yellow{color:var(--yellow)}
-
-.log{
-  height:360px;overflow:auto;margin-top:10px
-}
-.line{
-  font-size:12px;
-  border-left:3px solid #60a5fa;
-  background:rgba(0,0,0,.15);
-  border-radius:10px;
-  padding:6px 8px;margin-bottom:6px
-}
-.line small{color:var(--muted)}
-
-button{
-  border:1px solid var(--line);
-  background:#111a28;color:#fff;
-  padding:8px 12px;border-radius:12px;
-  cursor:pointer
-}
-button:hover{filter:brightness(1.1)}
-
-.footer{font-size:12px;color:var(--muted);margin-top:10px}
-
+  .card{
+    background: linear-gradient(180deg, rgba(18,26,39,.92), rgba(15,22,34,.92));
+    border:1px solid var(--line);
+    border-radius: var(--r);
+    box-shadow: var(--shadow);
+    padding:12px;
+    overflow:hidden;
+  }
+  .gameRow{display:flex; gap:12px; flex-wrap:wrap; align-items:flex-start}
+  canvas{
+    width:100%;
+    max-width: 520px;
+    aspect-ratio: 10 / 20;
+    background: rgba(0,0,0,.16);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius: 16px;
+    display:block;
+    touch-action:none;
+  }
+  .side{
+    flex:1;
+    min-width: 240px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .panel{
+    background: rgba(0,0,0,.16);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius: 16px;
+    padding:10px 12px;
+  }
+  .stats{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:10px;
+  }
+  .stat{padding:10px 12px; border-radius:16px; background: rgba(0,0,0,.18); border:1px solid rgba(255,255,255,.06)}
+  .k{font-size:12px; color:var(--muted)}
+  .v{font-size:18px; font-weight:900; margin-top:4px}
+  .miniRow{display:flex; gap:10px; flex-wrap:wrap}
+  .miniCanvas{
+    width: 120px; height: 120px;
+    border-radius: 16px;
+    background: rgba(0,0,0,.16);
+    border:1px solid rgba(255,255,255,.08);
+    display:block;
+  }
+  .hint{font-size:12px; color:var(--muted); line-height:1.55}
+  .controls{
+    display:grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap:10px;
+  }
+  .pad{
+    background: rgba(0,0,0,.16);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius: 16px;
+    padding:10px;
+  }
+  .pad b{display:block; font-size:12px; color:var(--muted); margin-bottom:8px}
+  .pad .btns{display:grid; grid-template-columns: 1fr 1fr; gap:10px}
+  .pad button{padding:12px 10px; font-weight:900}
+  .pad .wide{grid-column: span 2}
+  .toast{
+    position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    background: rgba(15,22,34,.92);
+    border:1px solid rgba(255,255,255,.10);
+    padding:10px 12px; border-radius:14px;
+    box-shadow: var(--shadow);
+    opacity:0; pointer-events:none;
+    transition:.2s opacity,.2s transform;
+    font-size:12px;
+    max-width:min(700px, calc(100vw - 30px));
+  }
+  .toast.on{opacity:1; transform:translateX(-50%) translateY(-2px)}
+  .row2{display:flex; gap:10px; flex-wrap:wrap}
+  .pill{
+    font-size:12px; padding:6px 10px; border-radius:999px;
+    border:1px solid rgba(255,255,255,.12);
+    background: rgba(0,0,0,.18);
+    color: var(--muted);
+    white-space:nowrap;
+  }
+  a.link{color: rgba(96,165,250,.95); text-decoration:none}
+  a.link:hover{text-decoration:underline}
 </style>
 </head>
-
 <body>
 <div class="wrap">
-
-<header>
-  <div style="display:flex;gap:10px;align-items:center">
-    <div class="logo">댓</div>
-    <div>
-      <h1>댓글 전쟁 시뮬</h1>
-      <div class="sub">팩폭·비꼼·논점흐리기로 여론을 지배하라</div>
+  <header>
+    <div class="brand">
+      <div class="logo">T</div>
+      <div>
+        <h1>Canvas Tetris</h1>
+        <div class="sub">링크로 바로 플레이되는 “온라인” 테트리스 (저장 자동)</div>
+      </div>
     </div>
+    <div class="top">
+      <button class="btn-accent" id="btnStart">시작</button>
+      <button id="btnPause">일시정지</button>
+      <button class="btn-good" id="btnNew">새 게임</button>
+      <button class="btn-warn" id="btnResetBest">기록 초기화</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <section class="card">
+      <div class="gameRow">
+        <canvas id="game" width="500" height="1000" aria-label="tetris board"></canvas>
+
+        <div class="side">
+          <div class="panel">
+            <div class="stats">
+              <div class="stat"><div class="k">점수</div><div class="v" id="score">0</div></div>
+              <div class="stat"><div class="k">최고</div><div class="v" id="best">0</div></div>
+              <div class="stat"><div class="k">레벨</div><div class="v" id="level">1</div></div>
+              <div class="stat"><div class="k">라인</div><div class="v" id="lines">0</div></div>
+            </div>
+            <div style="height:10px"></div>
+            <div class="row2">
+              <span class="pill" id="statePill">대기</span>
+              <span class="pill" id="speedPill">속도: -</span>
+              <span class="pill" id="bagPill">7-Bag</span>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="miniRow">
+              <div>
+                <div class="k" style="margin-bottom:6px">NEXT</div>
+                <canvas class="miniCanvas" id="next" width="120" height="120"></canvas>
+              </div>
+              <div>
+                <div class="k" style="margin-bottom:6px">HOLD</div>
+                <canvas class="miniCanvas" id="hold" width="120" height="120"></canvas>
+              </div>
+            </div>
+            <div class="hint" style="margin-top:10px">
+              키보드: ←/→ 이동 · ↓ 소프트드롭 · ↑ 회전 · <b>Space 하드드롭</b><br/>
+              <b>C 홀드</b> · P 일시정지 · R 재시작<br/>
+              모바일: <b>좌/우 스와이프 이동</b>, <b>탭 회전</b>, <b>아래 스와이프 드롭</b>
+            </div>
+          </div>
+
+          <div class="pad">
+            <b>모바일/마우스 버튼</b>
+            <div class="btns">
+              <button id="btnLeft">←</button>
+              <button id="btnRight">→</button>
+              <button id="btnRotate">회전</button>
+              <button id="btnSoft">↓</button>
+              <button class="wide btn-accent" id="btnHard">하드드롭</button>
+              <button id="btnHold">홀드</button>
+              <button id="btnRestart">R</button>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="hint">
+              • 이 페이지는 서버 없이도 동작. GitHub Pages에 올려 링크 공유하면 끝.<br/>
+              • “진짜 온라인(멀티/랭킹 서버)”도 가능하지만 그건 별도 백엔드가 필요해.<br/>
+              • 원하면 내가 <b>리더보드(무료 백엔드)</b> 붙이는 방식도 설계해줄 수 있음.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="card">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px">
+        <div style="font-weight:900">플레이 로그</div>
+        <a class="link" href="#" id="shareTip">게시글에 올리는 법</a>
+      </div>
+      <div class="hint" id="log" style="margin-top:10px; white-space:pre-line"></div>
+    </aside>
   </div>
-  <button onclick="resetGame()">리셋</button>
-</header>
-
-<div class="grid">
-
-<!-- LEFT -->
-<section class="card">
-
-<div class="stats">
-  <div class="stat">
-    <div class="k">내 여론</div>
-    <div class="v" id="me">50%</div>
-    <div class="bar"><div id="meBar" class="fill"></div></div>
-  </div>
-
-  <div class="stat">
-    <div class="k">상대 여론</div>
-    <div class="v" id="enemy">50%</div>
-    <div class="bar"><div id="enemyBar" class="fill"></div></div>
-  </div>
-
-  <div class="stat">
-    <div class="k">분노 게이지</div>
-    <div class="v" id="rage">0</div>
-  </div>
 </div>
 
-<div class="cards">
-
-<div class="cardBtn" onclick="play('fact')">
-<b class="red">팩폭</b>
-사실 폭격<br>+강공
-</div>
-
-<div class="cardBtn" onclick="play('mock')">
-<b class="blue">비꼼</b>
-멘탈 타격<br>+콤보
-</div>
-
-<div class="cardBtn" onclick="play('shift')">
-<b class="yellow">논점흐리기</b>
-주제 변경<br>+방어
-</div>
-
-<div class="cardBtn" onclick="play('logic')">
-<b class="green">논리반박</b>
-정공법<br>+안정
-</div>
-
-<div class="cardBtn" onclick="play('rage')">
-<b class="red">분노폭발</b>
-한방딜<br>리스크
-</div>
-
-<div class="cardBtn" onclick="play('ignore')">
-<b class="blue">무시</b>
-쿨찐모드<br>회복
-</div>
-
-</div>
-
-<div class="footer">
-• 목표: 상대 여론 0% 만들기<br>
-• 연속 성공 시 콤보 보너스
-</div>
-
-</section>
-
-<!-- RIGHT -->
-<aside class="card">
-
-<b>전쟁 로그</b>
-<div class="log" id="log"></div>
-
-</aside>
-
-</div>
-</div>
+<div class="toast" id="toast"></div>
 
 <script>
-let me=50, enemy=50;
-let rage=0, combo=0;
-let turn=1;
+(() => {
+  // ===== Config =====
+  const COLS = 10, ROWS = 20;
+  const BLOCK = 50; // internal canvas pixels per cell (board canvas is 500x1000)
+  const LS_KEY = "canvas_tetris_v1";
 
-const logBox=document.getElementById("log");
+  // Modern 7-bag + simple wall kicks (not full SRS, but feels good)
+  const PIECES = {
+    I: {
+      color: "#60a5fa",
+      cells: [
+        [[0,1],[1,1],[2,1],[3,1]],
+        [[2,0],[2,1],[2,2],[2,3]],
+        [[0,2],[1,2],[2,2],[3,2]],
+        [[1,0],[1,1],[1,2],[1,3]],
+      ],
+      kick: [[0,0],[1,0],[-1,0],[2,0],[-2,0],[0,-1],[0,1]]
+    },
+    O: {
+      color: "#fbbf24",
+      cells: [
+        [[1,0],[2,0],[1,1],[2,1]],
+        [[1,0],[2,0],[1,1],[2,1]],
+        [[1,0],[2,0],[1,1],[2,1]],
+        [[1,0],[2,0],[1,1],[2,1]],
+      ],
+      kick: [[0,0]]
+    },
+    T: {
+      color: "#a78bfa",
+      cells: [
+        [[1,0],[0,1],[1,1],[2,1]],
+        [[1,0],[1,1],[2,1],[1,2]],
+        [[0,1],[1,1],[2,1],[1,2]],
+        [[1,0],[0,1],[1,1],[1,2]],
+      ],
+      kick: [[0,0],[1,0],[-1,0],[0,-1],[0,1],[2,0],[-2,0]]
+    },
+    S: {
+      color: "#34d399",
+      cells: [
+        [[1,0],[2,0],[0,1],[1,1]],
+        [[1,0],[1,1],[2,1],[2,2]],
+        [[1,1],[2,1],[0,2],[1,2]],
+        [[0,0],[0,1],[1,1],[1,2]],
+      ],
+      kick: [[0,0],[1,0],[-1,0],[0,-1],[0,1],[2,0],[-2,0]]
+    },
+    Z: {
+      color: "#fb7185",
+      cells: [
+        [[0,0],[1,0],[1,1],[2,1]],
+        [[2,0],[1,1],[2,1],[1,2]],
+        [[0,1],[1,1],[1,2],[2,2]],
+        [[1,0],[0,1],[1,1],[0,2]],
+      ],
+      kick: [[0,0],[1,0],[-1,0],[0,-1],[0,1],[2,0],[-2,0]]
+    },
+    J: {
+      color: "#38bdf8",
+      cells: [
+        [[0,0],[0,1],[1,1],[2,1]],
+        [[1,0],[2,0],[1,1],[1,2]],
+        [[0,1],[1,1],[2,1],[2,2]],
+        [[1,0],[1,1],[0,2],[1,2]],
+      ],
+      kick: [[0,0],[1,0],[-1,0],[0,-1],[0,1],[2,0],[-2,0]]
+    },
+    L: {
+      color: "#f97316",
+      cells: [
+        [[2,0],[0,1],[1,1],[2,1]],
+        [[1,0],[1,1],[1,2],[2,2]],
+        [[0,1],[1,1],[2,1],[0,2]],
+        [[0,0],[1,0],[1,1],[1,2]],
+      ],
+      kick: [[0,0],[1,0],[-1,0],[0,-1],[0,1],[2,0],[-2,0]]
+    }
+  };
 
-function log(msg){
-  const t=new Date().toLocaleTimeString();
-  const d=document.createElement("div");
-  d.className="line";
-  d.innerHTML=`<small>${t}</small><br>${msg}`;
-  logBox.prepend(d);
-}
+  const SCORE_LINE = [0, 100, 300, 500, 800]; // 1..4 lines
 
-function clamp(v){return Math.max(0,Math.min(100,v));}
+  // ===== DOM =====
+  const game = document.getElementById("game");
+  const ctx = game.getContext("2d");
+  const nextC = document.getElementById("next");
+  const nextCtx = nextC.getContext("2d");
+  const holdC = document.getElementById("hold");
+  const holdCtx = holdC.getContext("2d");
+  const $ = (id)=>document.getElementById(id);
 
-function update(){
-  me=clamp(me); enemy=clamp(enemy);
+  const scoreEl = $("score");
+  const bestEl = $("best");
+  const levelEl = $("level");
+  const linesEl = $("lines");
+  const statePill = $("statePill");
+  const speedPill = $("speedPill");
+  const logEl = $("log");
+  const toastEl = $("toast");
 
-  document.getElementById("me").innerText=me+"%";
-  document.getElementById("enemy").innerText=enemy+"%";
-  document.getElementById("rage").innerText=rage;
+  // Buttons
+  $("btnStart").addEventListener("click", ()=>start());
+  $("btnPause").addEventListener("click", ()=>togglePause());
+  $("btnNew").addEventListener("click", ()=>newGame(true));
+  $("btnResetBest").addEventListener("click", ()=>resetBest());
+  $("btnLeft").addEventListener("click", ()=>move(-1));
+  $("btnRight").addEventListener("click", ()=>move(1));
+  $("btnRotate").addEventListener("click", ()=>rotate(1));
+  $("btnSoft").addEventListener("click", ()=>softDrop());
+  $("btnHard").addEventListener("click", ()=>hardDrop());
+  $("btnHold").addEventListener("click", ()=>hold());
+  $("btnRestart").addEventListener("click", ()=>newGame(true));
+  $("shareTip").addEventListener("click", (e)=>{ e.preventDefault(); toast("GitHub에 index.html 업로드 → Settings > Pages → main/root → 생성된 링크를 게시글에 붙이면 끝"); });
 
-  document.getElementById("meBar").style.width=me+"%";
-  document.getElementById("enemyBar").style.width=enemy+"%";
-
-  if(enemy<=0){
-    alert("🎉 여론전 승리!");
-    resetGame();
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add("on");
+    clearTimeout(toastEl._t);
+    toastEl._t = setTimeout(()=>toastEl.classList.remove("on"), 1600);
   }
-  if(me<=0){
-    alert("💀 여론전 패배...");
-    resetGame();
+
+  // ===== Save =====
+  function loadSave(){
+    try{
+      const raw = localStorage.getItem(LS_KEY);
+      if(!raw) return { best: 0 };
+      const s = JSON.parse(raw);
+      return { best: Math.max(0, s.best|0) };
+    }catch(e){ return { best: 0 }; }
   }
-}
-
-function enemyTurn(){
-  const r=Math.random();
-
-  let dmg=5+Math.random()*8;
-
-  if(r<0.3){
-    me-=dmg;
-    log("💬 상대: '팩트는 니가 틀림ㅋㅋ'");
-  }else if(r<0.6){
-    me-=dmg*1.2;
-    log("💬 상대: '이걸 믿는 사람이 있냐?'");
-  }else{
-    enemy+=5;
-    log("💬 상대: '본질은 이게 아니고요'");
+  function saveSave(){
+    try{ localStorage.setItem(LS_KEY, JSON.stringify({best})); }catch(e){}
   }
-}
 
-function play(type){
+  let { best } = loadSave();
 
-  let dmg=0;
+  // ===== Game State =====
+  let board, cur, next, holdPiece, canHold;
+  let score=0, level=1, lines=0;
+  let running=false, paused=false, gameOver=false;
 
-  switch(type){
+  let dropTimer=0;
+  let lastTs=performance.now();
 
-    case "fact":
-      dmg=10+combo*2;
-      enemy-=dmg;
-      rage+=4;
-      combo++;
-      log(`🔥 팩폭! 상대 여론 -${dmg}%`);
-      break;
+  // input repeat for keyboard
+  const keyState = new Map();
 
-    case "mock":
-      dmg=7+combo*3;
-      enemy-=dmg;
-      rage+=3;
-      combo++;
-      log(`😏 비꼼 성공! 멘탈 박살 (-${dmg}%)`);
-      break;
+  // 7-bag generator
+  let bag = [];
+  function refillBag(){
+    bag = ["I","O","T","S","Z","J","L"];
+    // Fisher-Yates
+    for(let i=bag.length-1;i>0;i--){
+      const j = (Math.random()*(i+1))|0;
+      [bag[i], bag[j]] = [bag[j], bag[i]];
+    }
+  }
+  function pullFromBag(){
+    if(bag.length===0) refillBag();
+    return bag.pop();
+  }
 
-    case "shift":
-      me+=6; enemy-=4;
-      rage+=2;
-      combo=0;
-      log("🌀 논점 변경! 분위기 장악");
-      break;
+  function emptyBoard(){
+    const b = Array.from({length:ROWS}, ()=>Array(COLS).fill(null));
+    return b;
+  }
 
-    case "logic":
-      dmg=6+combo;
-      enemy-=dmg;
-      me+=4;
-      combo++;
-      log("📚 논리 반박! 신뢰도 상승");
-      break;
+  function makePiece(type){
+    return { type, r:0, x:3, y:0 }; // spawn near top
+  }
 
-    case "rage":
-      if(rage<10){
-        log("❌ 분노 부족!");
+  function cellsOf(piece){
+    const def = PIECES[piece.type];
+    const shape = def.cells[piece.r];
+    return shape.map(([dx,dy]) => [piece.x + dx, piece.y + dy]);
+  }
+
+  function valid(piece){
+    for(const [x,y] of cellsOf(piece)){
+      if(x < 0 || x >= COLS || y < 0 || y >= ROWS) return false;
+      if(board[y][x]) return false;
+    }
+    return true;
+  }
+
+  function lockPiece(){
+    for(const [x,y] of cellsOf(cur)){
+      board[y][x] = cur.type;
+    }
+    clearLines();
+    spawnNext();
+  }
+
+  function clearLines(){
+    let cleared = 0;
+    for(let y=ROWS-1;y>=0;y--){
+      if(board[y].every(v=>v)){
+        board.splice(y,1);
+        board.unshift(Array(COLS).fill(null));
+        cleared++;
+        y++;
+      }
+    }
+    if(cleared>0){
+      lines += cleared;
+      const base = SCORE_LINE[cleared] || 0;
+      score += base * level;
+      // level up every 10 lines
+      const newLevel = 1 + Math.floor(lines / 10);
+      if(newLevel !== level){
+        level = newLevel;
+        toast(`레벨 업! ${level}`);
+      }
+      log(`라인 ${cleared}개 제거! (+${base*level}점)`);
+    }
+  }
+
+  function spawnNext(){
+    cur = next;
+    cur.x = 3; cur.y = 0; cur.r = 0;
+    next = makePiece(pullFromBag());
+    canHold = true;
+
+    if(!valid(cur)){
+      onGameOver();
+    }
+  }
+
+  function onGameOver(){
+    gameOver = true;
+    running = false;
+    paused = false;
+    statePill.textContent = "GAME OVER";
+    if(score > best){
+      best = score;
+      saveSave();
+      toast("최고기록 갱신!");
+      log(`최고기록 갱신: ${best}`);
+    } else {
+      log("게임 오버.");
+    }
+    renderHUD();
+  }
+
+  function resetBest(){
+    if(!confirm("최고 기록을 초기화할까요?")) return;
+    best = 0;
+    saveSave();
+    renderHUD();
+    toast("최고 기록 초기화");
+  }
+
+  function newGame(hardReset=false){
+    board = emptyBoard();
+    score = 0; level = 1; lines = 0;
+    gameOver = false;
+    paused = false;
+
+    refillBag();
+    cur = makePiece(pullFromBag());
+    next = makePiece(pullFromBag());
+    holdPiece = null;
+    canHold = true;
+
+    // ensure spawn valid; if not, refill quickly (rare)
+    if(!valid(cur)) refillBag();
+
+    dropTimer = 0;
+
+    statePill.textContent = "대기";
+    renderHUD();
+    drawAll();
+    log(hardReset ? "새 게임 시작." : "리셋.");
+  }
+
+  function start(){
+    if(gameOver || !board) newGame(true);
+    running = true;
+    paused = false;
+    statePill.textContent = "진행 중";
+    toast("시작!");
+  }
+
+  function togglePause(){
+    if(gameOver) return;
+    if(!running){
+      // allow pause toggle when not running -> start
+      start();
+      return;
+    }
+    paused = !paused;
+    statePill.textContent = paused ? "일시정지" : "진행 중";
+    toast(paused ? "일시정지" : "재개");
+  }
+
+  function dropInterval(){
+    // faster with level. clamp for sanity.
+    const ms = Math.max(70, 650 - (level-1)*45);
+    return ms;
+  }
+
+  // ===== Controls =====
+  function move(dir){
+    if(!running || paused || gameOver) return;
+    const p = {...cur, x: cur.x + dir};
+    if(valid(p)){ cur = p; }
+  }
+
+  function rotate(dir){
+    if(!running || paused || gameOver) return;
+    const def = PIECES[cur.type];
+    const nr = (cur.r + dir + 4) % 4;
+    // try kicks
+    for(const [kx,ky] of def.kick){
+      const p = {...cur, r:nr, x: cur.x + kx, y: cur.y + ky};
+      if(valid(p)){
+        cur = p;
         return;
       }
-      dmg=25+Math.random()*10;
-      enemy-=dmg;
-      me-=8;
-      rage=0;
-      combo=0;
-      log(`💥 분노폭발! 초강타 -${dmg}%`);
-      break;
-
-    case "ignore":
-      me+=8;
-      rage=Math.max(0,rage-4);
-      combo=0;
-      log("😌 무시. 멘탈 회복");
-      break;
+    }
   }
 
-  enemyTurn();
-  update();
-}
+  function softDrop(){
+    if(!running || paused || gameOver) return;
+    const p = {...cur, y: cur.y + 1};
+    if(valid(p)){
+      cur = p;
+      score += 1; // small reward
+    }else{
+      lockPiece();
+    }
+  }
 
-function resetGame(){
-  me=50; enemy=50;
-  rage=0; combo=0;
-  logBox.innerHTML="";
-  log("새로운 댓글 전쟁 시작");
-  update();
-}
+  function hardDrop(){
+    if(!running || paused || gameOver) return;
+    let steps = 0;
+    let p = {...cur};
+    while(true){
+      const q = {...p, y: p.y + 1};
+      if(valid(q)){ p = q; steps++; }
+      else break;
+    }
+    cur = p;
+    score += steps * 2;
+    lockPiece();
+  }
 
-resetGame();
+  function hold(){
+    if(!running || paused || gameOver) return;
+    if(!canHold) return;
+    canHold = false;
+
+    const currentType = cur.type;
+    if(!holdPiece){
+      holdPiece = currentType;
+      spawnNext();
+    }else{
+      cur = makePiece(holdPiece);
+      holdPiece = currentType;
+      cur.x = 3; cur.y = 0; cur.r = 0;
+      if(!valid(cur)){
+        onGameOver();
+        return;
+      }
+    }
+  }
+
+  // ===== Ghost piece =====
+  function ghostPiece(){
+    let p = {...cur};
+    while(true){
+      const q = {...p, y:p.y+1};
+      if(valid(q)) p = q;
+      else break;
+    }
+    return p;
+  }
+
+  // ===== Rendering =====
+  function drawCell(gctx, x, y, color, alpha=1){
+    const px = x * BLOCK;
+    const py = y * BLOCK;
+
+    // subtle 3D
+    gctx.globalAlpha = alpha;
+    gctx.fillStyle = color;
+    gctx.fillRect(px+1, py+1, BLOCK-2, BLOCK-2);
+
+    // highlight edge
+    gctx.globalAlpha = alpha * 0.55;
+    gctx.strokeStyle = "rgba(255,255,255,.22)";
+    gctx.lineWidth = 2;
+    gctx.strokeRect(px+2, py+2, BLOCK-4, BLOCK-4);
+
+    // inner shadow
+    gctx.globalAlpha = alpha * 0.35;
+    gctx.strokeStyle = "rgba(0,0,0,.35)";
+    gctx.lineWidth = 3;
+    gctx.strokeRect(px+4, py+4, BLOCK-8, BLOCK-8);
+
+    gctx.globalAlpha = 1;
+  }
+
+  function clearCanvas(gctx, w, h){
+    gctx.clearRect(0,0,w,h);
+    // soft background grid
+    gctx.fillStyle = "rgba(0,0,0,.10)";
+    gctx.fillRect(0,0,w,h);
+    gctx.strokeStyle = "rgba(255,255,255,.06)";
+    gctx.lineWidth = 1;
+    for(let x=0;x<=w;x+=BLOCK){
+      gctx.beginPath(); gctx.moveTo(x,0); gctx.lineTo(x,h); gctx.stroke();
+    }
+    for(let y=0;y<=h;y+=BLOCK){
+      gctx.beginPath(); gctx.moveTo(0,y); gctx.lineTo(w,y); gctx.stroke();
+    }
+  }
+
+  function drawBoard(){
+    clearCanvas(ctx, game.width, game.height);
+
+    // locked blocks
+    for(let y=0;y<ROWS;y++){
+      for(let x=0;x<COLS;x++){
+        const t = board[y][x];
+        if(t){
+          drawCell(ctx, x, y, PIECES[t].color, 1);
+        }
+      }
+    }
+
+    // ghost
+    if(running && !paused && !gameOver){
+      const g = ghostPiece();
+      const col = PIECES[g.type].color;
+      for(const [x,y] of cellsOf(g)){
+        // ghost outline
+        ctx.globalAlpha = 0.22;
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 4;
+        const px=x*BLOCK, py=y*BLOCK;
+        ctx.strokeRect(px+5, py+5, BLOCK-10, BLOCK-10);
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // current
+    if(!gameOver){
+      const col = PIECES[cur.type].color;
+      for(const [x,y] of cellsOf(cur)){
+        drawCell(ctx, x, y, col, 1);
+      }
+    }
+
+    // overlay for pause/gameover
+    if(paused || gameOver){
+      ctx.fillStyle = "rgba(0,0,0,.55)";
+      ctx.fillRect(0,0,game.width,game.height);
+      ctx.fillStyle = "rgba(231,238,252,.92)";
+      ctx.font = "900 56px system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(gameOver ? "GAME OVER" : "PAUSED", game.width/2, game.height/2 - 10);
+      ctx.font = "700 18px system-ui, sans-serif";
+      ctx.fillStyle = "rgba(155,176,208,.95)";
+      ctx.fillText(gameOver ? "새 게임 버튼으로 재시작" : "P 또는 버튼으로 재개", game.width/2, game.height/2 + 48);
+      ctx.textAlign = "start";
+      ctx.textBaseline = "alphabetic";
+    }
+  }
+
+  function drawMini(gctx, type){
+    clearCanvas(gctx, 120, 120);
+    if(!type) return;
+    const def = PIECES[type];
+    const shape = def.cells[0]; // show rotation 0
+    // center in 4x4 grid
+    const size = 4;
+    const cell = 24;
+    const offX = (120 - size*cell)/2;
+    const offY = (120 - size*cell)/2;
+
+    // draw blocks
+    for(const [dx,dy] of shape){
+      const x = offX + dx*cell;
+      const y = offY + dy*cell;
+      gctx.fillStyle = def.color;
+      gctx.globalAlpha = 0.95;
+      gctx.fillRect(x+2, y+2, cell-4, cell-4);
+      gctx.globalAlpha = 0.55;
+      gctx.strokeStyle = "rgba(255,255,255,.25)";
+      gctx.lineWidth = 2;
+      gctx.strokeRect(x+3, y+3, cell-6, cell-6);
+      gctx.globalAlpha = 1;
+    }
+  }
+
+  function renderHUD(){
+    scoreEl.textContent = score|0;
+    bestEl.textContent = best|0;
+    levelEl.textContent = level|0;
+    linesEl.textContent = lines|0;
+    const ms = dropInterval();
+    speedPill.textContent = `속도: ${ms}ms`;
+    bestEl.title = "localStorage에 저장됨";
+  }
+
+  function drawAll(){
+    drawBoard();
+    drawMini(nextCtx, next.type);
+    drawMini(holdCtx, holdPiece);
+    renderHUD();
+  }
+
+  // ===== Logging =====
+  function log(msg){
+    const t = new Date().toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+    const prev = logEl.textContent;
+    const nextText = `[${t}] ${msg}\n` + prev;
+    logEl.textContent = nextText.slice(0, 2000);
+  }
+
+  // ===== Main loop =====
+  function step(ts){
+    const dt = Math.min(0.05, Math.max(0, (ts - lastTs)/1000));
+    lastTs = ts;
+
+    if(running && !paused && !gameOver){
+      // keyboard held repeat (left/right/soft)
+      handleHeldKeys(dt);
+
+      dropTimer += dt * 1000;
+      const interval = dropInterval();
+      if(dropTimer >= interval){
+        dropTimer -= interval;
+        // gravity drop
+        const p = {...cur, y: cur.y + 1};
+        if(valid(p)){
+          cur = p;
+        }else{
+          lockPiece();
+        }
+      }
+    }
+
+    drawAll();
+    requestAnimationFrame(step);
+  }
+
+  function handleHeldKeys(dt){
+    // simple DAS/ARR style
+    // left/right repeat
+    const now = performance.now();
+    const rep = (key, firstDelay, repeatDelay, action) => {
+      const st = keyState.get(key);
+      if(!st || !st.down) return;
+      if(!st.didFirst){
+        action();
+        st.didFirst = true;
+        st.nextAt = now + firstDelay;
+      } else if(now >= st.nextAt){
+        action();
+        st.nextAt = now + repeatDelay;
+      }
+    };
+    rep("ArrowLeft", 170, 45, ()=>move(-1));
+    rep("ArrowRight", 170, 45, ()=>move(1));
+    rep("ArrowDown", 0, 25, ()=>softDrop());
+  }
+
+  // ===== Keyboard =====
+  window.addEventListener("keydown", (e)=>{
+    if(["ArrowLeft","ArrowRight","ArrowDown","ArrowUp"," "].includes(e.key)) e.preventDefault();
+
+    if(e.key === "p" || e.key === "P"){ togglePause(); return; }
+    if(e.key === "r" || e.key === "R"){ newGame(true); start(); return; }
+
+    if(e.key === "c" || e.key === "C"){ hold(); return; }
+    if(e.key === " "){ hardDrop(); return; }
+    if(e.key === "ArrowUp"){ rotate(1); return; }
+
+    // holdable keys
+    if(e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowDown"){
+      if(!keyState.has(e.key)) keyState.set(e.key, {down:false, didFirst:false, nextAt:0});
+      const st = keyState.get(e.key);
+      if(!st.down){
+        st.down = true;
+        st.didFirst = false;
+        st.nextAt = 0;
+      }
+    }
+  }, {passive:false});
+
+  window.addEventListener("keyup", (e)=>{
+    const st = keyState.get(e.key);
+    if(st){
+      st.down = false;
+      st.didFirst = false;
+      st.nextAt = 0;
+    }
+  });
+
+  // ===== Touch controls (swipe/tap) =====
+  // tap: rotate, swipe L/R: move, swipe down: hard drop (or soft if small)
+  let touchStart = null;
+  game.addEventListener("pointerdown", (e)=>{
+    if(e.pointerType === "mouse") return;
+    game.setPointerCapture(e.pointerId);
+    touchStart = {x:e.clientX, y:e.clientY, t:performance.now(), moved:false};
+  });
+  game.addEventListener("pointermove", (e)=>{
+    if(!touchStart) return;
+    const dx = e.clientX - touchStart.x;
+    const dy = e.clientY - touchStart.y;
+    if(Math.abs(dx) > 18 || Math.abs(dy) > 18) touchStart.moved = true;
+
+    // Horizontal step moves
+    if(Math.abs(dx) > 34 && Math.abs(dx) > Math.abs(dy)){
+      if(dx > 0) move(1); else move(-1);
+      touchStart.x = e.clientX; // reset for step movement
+    }
+    // Down swipe: soft drop steps
+    if(dy > 28 && Math.abs(dy) > Math.abs(dx)){
+      softDrop();
+      touchStart.y = e.clientY;
+    }
+  });
+  game.addEventListener("pointerup", (e)=>{
+    if(!touchStart) return;
+    const dx = e.clientX - touchStart.x;
+    const dy = e.clientY - touchStart.y;
+    const dt = performance.now() - touchStart.t;
+
+    // quick tap -> rotate
+    if(!touchStart.moved && dt < 250){
+      rotate(1);
+    } else {
+      // fast swipe down -> hard drop
+      if(dy > 120) hardDrop();
+    }
+    touchStart = null;
+  });
+
+  // ===== Init =====
+  bestEl.textContent = best|0;
+  newGame(true);
+  drawAll();
+  log("대기 중. 시작 버튼을 누르거나 키보드로 조작해도 됨.");
+  requestAnimationFrame(step);
+})();
 </script>
 </body>
 </html>
