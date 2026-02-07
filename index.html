@@ -1,1070 +1,326 @@
-```html
 <!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>회사원 자동 승진 시뮬</title>
-  <style>
-    :root{
-      --bg:#0b0f17;
-      --panel:#121a27;
-      --panel2:#0f1622;
-      --text:#e7eefc;
-      --muted:#9bb0d0;
-      --line:#223049;
-      --good:#34d399;
-      --warn:#fbbf24;
-      --bad:#fb7185;
-      --accent:#60a5fa;
-      --shadow: 0 12px 30px rgba(0,0,0,.35);
-      --radius: 18px;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", "Apple SD Gothic Neo", Arial, "맑은 고딕", sans-serif;
-      background: radial-gradient(1200px 700px at 20% 0%, rgba(96,165,250,.25), transparent 60%),
-                  radial-gradient(900px 600px at 90% 15%, rgba(52,211,153,.18), transparent 55%),
-                  radial-gradient(900px 600px at 60% 100%, rgba(251,113,133,.14), transparent 55%),
-                  var(--bg);
-      color:var(--text);
-    }
-    .wrap{max-width:1100px; margin:0 auto; padding:18px}
-    header{
-      display:flex; align-items:center; justify-content:space-between; gap:12px;
-      margin: 10px 0 16px;
-    }
-    .brand{
-      display:flex; align-items:center; gap:10px;
-    }
-    .logo{
-      width:44px; height:44px; border-radius:14px;
-      background: linear-gradient(145deg, rgba(96,165,250,.9), rgba(52,211,153,.85));
-      box-shadow: var(--shadow);
-      display:grid; place-items:center;
-      font-weight:900; letter-spacing:-1px;
-    }
-    h1{font-size:18px; margin:0}
-    .sub{font-size:12px; color:var(--muted); margin-top:2px}
-    .top-actions{display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end}
-    button, .btn{
-      border:1px solid var(--line);
-      background: rgba(18,26,39,.75);
-      color:var(--text);
-      padding:10px 12px;
-      border-radius:14px;
-      cursor:pointer;
-      transition:.15s transform, .15s filter, .15s background;
-      user-select:none;
-    }
-    button:hover, .btn:hover{filter:brightness(1.06)}
-    button:active, .btn:active{transform: translateY(1px) scale(.99)}
-    .btn-accent{
-      background: linear-gradient(145deg, rgba(96,165,250,.35), rgba(18,26,39,.85));
-      border-color: rgba(96,165,250,.55);
-    }
-    .btn-good{
-      background: linear-gradient(145deg, rgba(52,211,153,.28), rgba(18,26,39,.85));
-      border-color: rgba(52,211,153,.55);
-    }
-    .btn-warn{
-      background: linear-gradient(145deg, rgba(251,191,36,.22), rgba(18,26,39,.85));
-      border-color: rgba(251,191,36,.55);
-    }
-    .grid{
-      display:grid;
-      grid-template-columns: 1.15fr .85fr;
-      gap:14px;
-    }
-    @media (max-width: 980px){
-      .grid{grid-template-columns:1fr}
-    }
-    .card{
-      background: linear-gradient(180deg, rgba(18,26,39,.92), rgba(15,22,34,.92));
-      border:1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding:14px;
-      overflow:hidden;
-    }
-    .row{display:flex; gap:12px; align-items:stretch; flex-wrap:wrap}
-    .stat{
-      flex: 1 1 180px;
-      background: rgba(0,0,0,.18);
-      border:1px solid rgba(255,255,255,.06);
-      border-radius:16px;
-      padding:10px 12px;
-    }
-    .k{font-size:12px; color:var(--muted)}
-    .v{font-size:18px; font-weight:800; margin-top:4px}
-    .rank{
-      display:flex; align-items:center; justify-content:space-between; gap:12px;
-      padding:12px; border-radius:16px;
-      background: linear-gradient(145deg, rgba(96,165,250,.16), rgba(0,0,0,.12));
-      border:1px solid rgba(96,165,250,.25);
-      margin-top:12px;
-    }
-    .rank strong{font-size:16px}
-    .badge{
-      font-size:12px; padding:6px 10px; border-radius:999px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.18);
-      color: var(--muted);
-      white-space:nowrap;
-    }
-    .progress{
-      margin-top:10px;
-      height:12px; border-radius:999px;
-      background: rgba(0,0,0,.22);
-      border:1px solid rgba(255,255,255,.06);
-      overflow:hidden;
-    }
-    .bar{
-      height:100%;
-      width:0%;
-      background: linear-gradient(90deg, rgba(96,165,250,.95), rgba(52,211,153,.9));
-      border-radius:999px;
-      transition: width .25s ease;
-    }
-    .actions{
-      display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;
-    }
-    .big{
-      flex: 1 1 240px;
-      padding:14px 14px;
-      font-weight:800;
-      font-size:14px;
-    }
-    .hint{font-size:12px; color:var(--muted); margin-top:6px; line-height:1.45}
-    .sec-title{
-      display:flex; justify-content:space-between; align-items:center; gap:10px;
-      margin-bottom:10px;
-    }
-    .sec-title h2{font-size:14px; margin:0}
-    .list{display:flex; flex-direction:column; gap:10px}
-    .item{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      padding:10px 12px;
-      border-radius:16px;
-      border:1px solid rgba(255,255,255,.08);
-      background: rgba(0,0,0,.16);
-    }
-    .item .left{display:flex; flex-direction:column; gap:3px}
-    .item .name{font-weight:800}
-    .item .desc{font-size:12px; color:var(--muted); line-height:1.35}
-    .item .right{display:flex; align-items:center; gap:8px}
-    .price{
-      font-size:12px; color:var(--muted);
-      border:1px solid rgba(255,255,255,.10);
-      padding:6px 9px; border-radius:999px;
-      background: rgba(0,0,0,.18);
-      white-space:nowrap;
-    }
-    .pill{
-      font-size:12px; padding:6px 9px; border-radius:999px;
-      border:1px solid rgba(52,211,153,.35);
-      color: rgba(52,211,153,.95);
-      background: rgba(52,211,153,.08);
-      white-space:nowrap;
-    }
-    .pill-warn{
-      border-color: rgba(251,191,36,.35);
-      color: rgba(251,191,36,.95);
-      background: rgba(251,191,36,.08);
-    }
-    .pill-bad{
-      border-color: rgba(251,113,133,.35);
-      color: rgba(251,113,133,.95);
-      background: rgba(251,113,133,.08);
-    }
-    .log{
-      height: 220px;
-      overflow:auto;
-      padding-right:4px;
-    }
-    .logline{
-      font-size:12px;
-      color: rgba(231,238,252,.88);
-      border-left: 3px solid rgba(96,165,250,.45);
-      padding: 6px 8px;
-      margin-bottom:8px;
-      background: rgba(0,0,0,.14);
-      border-radius:12px;
-      line-height:1.45;
-    }
-    .logline small{color:var(--muted)}
-    .adbox{
-      margin-top:12px;
-      padding:12px;
-      border-radius:16px;
-      border:1px dashed rgba(255,255,255,.18);
-      background: rgba(0,0,0,.12);
-      color:var(--muted);
-      font-size:12px;
-      line-height:1.45;
-    }
-    .adbox b{color:var(--text)}
-    .footer{
-      margin-top:14px;
-      display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;
-      color:var(--muted); font-size:12px;
-    }
-    .linkish{color: rgba(96,165,250,.95); text-decoration:none}
-    .linkish:hover{text-decoration:underline}
-    .toast{
-      position: fixed;
-      left: 50%;
-      bottom: 18px;
-      transform: translateX(-50%);
-      background: rgba(15,22,34,.92);
-      border:1px solid rgba(255,255,255,.10);
-      color: var(--text);
-      padding: 10px 12px;
-      border-radius: 14px;
-      box-shadow: var(--shadow);
-      opacity:0;
-      pointer-events:none;
-      transition: opacity .2s ease, transform .2s ease;
-      font-size: 12px;
-      max-width:min(640px, calc(100vw - 30px));
-    }
-    .toast.on{opacity:1; transform: translateX(-50%) translateY(-2px)}
-    .dim{
-      position:fixed; inset:0; background: rgba(0,0,0,.55);
-      display:none; align-items:center; justify-content:center; padding:18px;
-    }
-    .modal{
-      width:min(720px, 100%);
-      border-radius: 18px;
-      background: linear-gradient(180deg, rgba(18,26,39,.98), rgba(15,22,34,.98));
-      border:1px solid rgba(255,255,255,.10);
-      box-shadow: var(--shadow);
-      padding:14px;
-    }
-    .modal h3{margin:0 0 8px; font-size:14px}
-    .modal p{margin:0; color:var(--muted); font-size:12px; line-height:1.55}
-    .modal .row2{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px}
-    .smallnote{font-size:12px; color:var(--muted); margin-top:10px; line-height:1.55}
-    .code{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      font-size:12px;
-      background: rgba(0,0,0,.22);
-      border:1px solid rgba(255,255,255,.08);
-      padding:10px;
-      border-radius:14px;
-      overflow:auto;
-      margin-top:10px;
-      color: rgba(231,238,252,.92);
-    }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>댓글 전쟁 시뮬</title>
+
+<style>
+:root{
+  --bg:#0b0f17; --panel:#121a27; --line:#223049;
+  --text:#e7eefc; --muted:#9bb0d0;
+  --red:#fb7185; --blue:#60a5fa; --green:#34d399; --yellow:#fbbf24;
+  --shadow:0 14px 34px rgba(0,0,0,.35);
+  --r:18px;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; color:var(--text);
+  font-family: system-ui,"Noto Sans KR","맑은 고딕";
+  background:
+    radial-gradient(1200px 700px at 20% 0%, rgba(96,165,250,.25), transparent 60%),
+    radial-gradient(900px 600px at 90% 15%, rgba(52,211,153,.18), transparent 55%),
+    var(--bg);
+}
+.wrap{max-width:1100px;margin:0 auto;padding:16px}
+header{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:12px
+}
+.logo{
+  width:44px;height:44px;border-radius:14px;
+  background:linear-gradient(145deg,#60a5fa,#34d399);
+  display:grid;place-items:center;font-weight:900
+}
+h1{margin:0;font-size:18px}
+.sub{font-size:12px;color:var(--muted)}
+
+.grid{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+
+.card{
+  background:rgba(18,26,39,.95);
+  border:1px solid var(--line);
+  border-radius:var(--r);
+  box-shadow:var(--shadow);
+  padding:12px
+}
+
+.stats{display:flex;gap:10px;flex-wrap:wrap}
+.stat{
+  flex:1;background:rgba(0,0,0,.18);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:14px;padding:8px 10px
+}
+.k{font-size:12px;color:var(--muted)}
+.v{font-size:18px;font-weight:900}
+
+.bar{
+  height:14px;border-radius:999px;
+  background:#111;border:1px solid #333;
+  overflow:hidden;margin-top:6px
+}
+.fill{
+  height:100%;width:50%;
+  background:linear-gradient(90deg,#60a5fa,#34d399)
+}
+
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+
+.cardBtn{
+  background:rgba(0,0,0,.2);
+  border:1px solid #333;border-radius:14px;
+  padding:10px;text-align:center;
+  cursor:pointer;transition:.15s
+}
+.cardBtn:hover{transform:translateY(-2px);filter:brightness(1.1)}
+.cardBtn b{display:block;margin-bottom:4px}
+
+.red{color:var(--red)}
+.blue{color:var(--blue)}
+.green{color:var(--green)}
+.yellow{color:var(--yellow)}
+
+.log{
+  height:360px;overflow:auto;margin-top:10px
+}
+.line{
+  font-size:12px;
+  border-left:3px solid #60a5fa;
+  background:rgba(0,0,0,.15);
+  border-radius:10px;
+  padding:6px 8px;margin-bottom:6px
+}
+.line small{color:var(--muted)}
+
+button{
+  border:1px solid var(--line);
+  background:#111a28;color:#fff;
+  padding:8px 12px;border-radius:12px;
+  cursor:pointer
+}
+button:hover{filter:brightness(1.1)}
+
+.footer{font-size:12px;color:var(--muted);margin-top:10px}
+
+</style>
 </head>
+
 <body>
-  <div class="wrap">
-    <header>
-      <div class="brand">
-        <div class="logo">승</div>
-        <div>
-          <h1>회사원 자동 승진 시뮬</h1>
-          <div class="sub">클릭 + 방치로 승진하고, 살아남아라. (저장 자동)</div>
-        </div>
-      </div>
-      <div class="top-actions">
-        <button class="btn btn-accent" id="btnManualSave">수동 저장</button>
-        <button class="btn" id="btnExport">세이브 내보내기</button>
-        <button class="btn" id="btnImport">세이브 불러오기</button>
-        <button class="btn btn-warn" id="btnReset">초기화</button>
-        <button class="btn btn-good" id="btnHow">수익화/운영 팁</button>
-      </div>
-    </header>
+<div class="wrap">
 
-    <div class="grid">
-      <!-- LEFT: GAME -->
-      <section class="card">
-        <div class="row">
-          <div class="stat">
-            <div class="k">직급</div>
-            <div class="v" id="rankName">사원</div>
-          </div>
-          <div class="stat">
-            <div class="k">업무력(클릭당)</div>
-            <div class="v" id="perClick">+1</div>
-          </div>
-          <div class="stat">
-            <div class="k">자동 업무(초당)</div>
-            <div class="v" id="perSec">+0</div>
-          </div>
-          <div class="stat">
-            <div class="k">스트레스</div>
-            <div class="v" id="stressVal">0</div>
-          </div>
-        </div>
-
-        <div class="rank">
-          <div>
-            <strong id="goalTitle">다음 승진까지</strong>
-            <div class="hint" id="goalHint">성과(업무점수)를 쌓아 승진하세요.</div>
-          </div>
-          <div class="badge" id="moneyBadge">급여: 0원/월</div>
-        </div>
-
-        <div class="progress" aria-label="promotion progress">
-          <div class="bar" id="promoBar"></div>
-        </div>
-        <div class="hint" id="promoText">성과 0 / 100</div>
-
-        <div class="actions">
-          <button class="big btn-accent" id="btnWork">업무 처리 (클릭)</button>
-          <button class="big btn" id="btnNap">화장실/커피타임 (스트레스 -)</button>
-          <button class="big btn-good" id="btnAdBoost">광고 보기: 10분 가속 (모의)</button>
-        </div>
-        <div class="hint">
-          • 스트레스가 높으면 <b>성과 효율이 떨어지고</b> 이벤트가 더 험해진다.<br/>
-          • “광고 보기” 버튼은 실제 광고가 아니라 <b>보상형 광고 자리</b>를 미리 만든 거다.
-        </div>
-
-        <div class="adbox">
-          <b>[배너 광고 자리]</b><br/>
-          GitHub Pages에서는 애드센스 승인/정책 이슈가 생길 수 있어서,
-          실제 운영은 <b>개인 도메인(권장)</b> 또는 별도 호스팅으로 옮기는 걸 추천.
-          (이 박스 위치가 배너 영역)
-        </div>
-
-        <div class="footer">
-          <div>버전 v1.0 · 저장: 자동(localStorage)</div>
-          <div>
-            <a class="linkish" href="#" id="donateLink">☕ 후원 링크(여기에 본인 링크 넣기)</a>
-          </div>
-        </div>
-      </section>
-
-      <!-- RIGHT: SHOP + LOG -->
-      <aside class="card">
-        <div class="sec-title">
-          <h2>업그레이드 / 팀 빌딩</h2>
-          <span class="pill" id="cashPill">현금: 0원</span>
-        </div>
-
-        <div class="list" id="shopList"></div>
-
-        <div style="height:12px"></div>
-
-        <div class="sec-title">
-          <h2>사내 로그</h2>
-          <span class="pill-warn pill" id="eventPill">이벤트: 대기</span>
-        </div>
-        <div class="log" id="logBox"></div>
-
-        <div style="height:12px"></div>
-
-        <div class="sec-title">
-          <h2>VIP</h2>
-          <span class="pill-bad pill" id="vipPill">미적용</span>
-        </div>
-
-        <div class="item">
-          <div class="left">
-            <div class="name">프리미엄 패키지(모의)</div>
-            <div class="desc">광고 제거 + 자동업무 +20% + 전용 로그 멘트</div>
-          </div>
-          <div class="right">
-            <span class="price">₩5,000</span>
-            <button class="btn btn-good" id="btnVip">VIP 적용(테스트)</button>
-          </div>
-        </div>
-        <div class="hint">
-          실제 결제(Stripe/토스페이 등)는 정적 페이지에서도 가능하지만, 초기에는
-          <b>후원/멤버십(외부 결제 링크)</b>가 가장 단순하고 안정적이다.
-        </div>
-      </aside>
+<header>
+  <div style="display:flex;gap:10px;align-items:center">
+    <div class="logo">댓</div>
+    <div>
+      <h1>댓글 전쟁 시뮬</h1>
+      <div class="sub">팩폭·비꼼·논점흐리기로 여론을 지배하라</div>
     </div>
   </div>
+  <button onclick="resetGame()">리셋</button>
+</header>
 
-  <!-- Toast -->
-  <div class="toast" id="toast"></div>
+<div class="grid">
 
-  <!-- Modal -->
-  <div class="dim" id="dim">
-    <div class="modal">
-      <h3>수익화/운영 팁 (실전)</h3>
-      <p>
-        이 게임은 정적 사이트(GitHub Pages)에서 바로 돌아가도록 만들었고,
-        수익화 버튼/영역(배너·보상형·후원·VIP)을 미리 심어둔 상태야.
-      </p>
-      <div class="code">
-1) 후원 링크(BuyMeACoffee/Patreon/토스/카카오페이)를 donateLink에 넣기
-2) 보상형 광고: btnAdBoost 클릭 시 실제 광고 SDK 대신 “광고 시청 완료” 콜백으로 바꾸기
-3) 배너 광고: adbox 위치에 애드센스/다른 네트워크 스크립트 삽입
-4) VIP: btnVip를 실제 결제 완료 후 활성화 로직으로 변경
-      </div>
-      <div class="smallnote">
-        ⚠ 참고: GitHub Pages는 애드센스 승인/정책/도메인 소유권 이슈가 생길 수 있어.
-        장기 운영은 <b>개인 도메인</b> 연결하거나, Cloudflare Pages/Netlify + 도메인을 권장.
-      </div>
-      <div class="row2">
-        <button class="btn btn-accent" id="btnClose">닫기</button>
-      </div>
-    </div>
+<!-- LEFT -->
+<section class="card">
+
+<div class="stats">
+  <div class="stat">
+    <div class="k">내 여론</div>
+    <div class="v" id="me">50%</div>
+    <div class="bar"><div id="meBar" class="fill"></div></div>
   </div>
 
-  <script>
-    // ====== Game Design ======
-    // Resource:
-    //  - perf: 성과(업무점수)
-    //  - cash: 현금(급여로 누적, 업그레이드 구매에 사용)
-    //  - stress: 스트레스(높으면 효율 감소 / 이벤트 악화)
-    //
-    // Core loop:
-    //  - click: perf += perClick * efficiency
-    //  - idle tick: perf += perSec * efficiency * dt
-    //  - monthly salary: cash += salaryPerSec * dt
-    //
-    // Promotion:
-    //  - requires perf >= threshold => rank up, perf resets partially, stress spikes a bit
-    //
-    // Save:
-    //  - localStorage + export/import
-    //
-    // Monetization hooks:
-    //  - "Ad boost" simulated reward (10 minutes speed boost)
-    //  - VIP toggle
-    //  - Donate link placeholder
+  <div class="stat">
+    <div class="k">상대 여론</div>
+    <div class="v" id="enemy">50%</div>
+    <div class="bar"><div id="enemyBar" class="fill"></div></div>
+  </div>
 
-    const LS_KEY = "office_promo_sim_v1";
+  <div class="stat">
+    <div class="k">분노 게이지</div>
+    <div class="v" id="rage">0</div>
+  </div>
+</div>
 
-    const RANKS = [
-      { name:"사원",   threshold: 120, salary: 1200000,  stressCap: 120, bonusClick: 0, bonusSec: 0 },
-      { name:"대리",   threshold: 420, salary: 1900000,  stressCap: 140, bonusClick: 1, bonusSec: 0 },
-      { name:"과장",   threshold: 1200, salary: 2900000, stressCap: 160, bonusClick: 2, bonusSec: 1 },
-      { name:"차장",   threshold: 3200, salary: 4200000, stressCap: 175, bonusClick: 3, bonusSec: 2 },
-      { name:"부장",   threshold: 8200, salary: 6200000, stressCap: 190, bonusClick: 5, bonusSec: 4 },
-      { name:"임원",   threshold: 22000, salary: 9000000, stressCap: 210, bonusClick: 8, bonusSec: 8 },
-      { name:"CEO",    threshold: 60000, salary: 14000000, stressCap: 230, bonusClick: 12, bonusSec: 14 }
-    ];
+<div class="cards">
 
-    // Shop items: each has base cost, scaling, and effects.
-    const SHOP = [
-      {
-        id:"keyboard",
-        name:"기계식 키보드",
-        desc:"+클릭 성과 증가 (손맛)",
-        baseCost: 120000,
-        costMul: 1.55,
-        effect(state){
-          state.perClickBase += 1;
-          state.stress += 2;
-        },
-        pill:"+클릭"
-      },
-      {
-        id:"coffee",
-        name:"카페인 IV 드립",
-        desc:"+자동 업무 증가 (초당) / 스트레스도 조금 증가",
-        baseCost: 240000,
-        costMul: 1.6,
-        effect(state){
-          state.perSecBase += 0.6;
-          state.stress += 4;
-        },
-        pill:"+초당"
-      },
-      {
-        id:"shortcut",
-        name:"엑셀 매크로",
-        desc:"+클릭 성과 크게 증가 / 스트레스 약간 감소(‘편해져서’)",
-        baseCost: 600000,
-        costMul: 1.7,
-        effect(state){
-          state.perClickBase += 3;
-          state.stress = Math.max(0, state.stress - 6);
-        },
-        pill:"+클릭"
-      },
-      {
-        id:"intern",
-        name:"인턴 1명",
-        desc:"+자동 업무 증가 / 가끔 사고 이벤트 발생 확률 소폭↑",
-        baseCost: 900000,
-        costMul: 1.75,
-        effect(state){
-          state.perSecBase += 1.8;
-          state.interns += 1;
-        },
-        pill:"+초당"
-      },
-      {
-        id:"network",
-        name:"사내 인맥",
-        desc:"승진 요구 성과 감소(=승진 쉬움) / 스트레스 감소",
-        baseCost: 1800000,
-        costMul: 1.85,
-        effect(state){
-          state.promoDiscount += 0.03; // 3%
-          state.stress = Math.max(0, state.stress - 10);
-        },
-        pill:"승진 도움"
-      },
-      {
-        id:"teamlead",
-        name:"팀장 버프(책임 전가)",
-        desc:"+자동 업무 증가 / 스트레스 증가(‘미안함’)",
-        baseCost: 2600000,
-        costMul: 1.9,
-        effect(state){
-          state.perSecBase += 4.2;
-          state.stress += 8;
-        },
-        pill:"+초당"
-      }
-    ];
+<div class="cardBtn" onclick="play('fact')">
+<b class="red">팩폭</b>
+사실 폭격<br>+강공
+</div>
 
-    // ====== State ======
-    const defaultState = () => ({
-      version: 1,
-      rankIdx: 0,
-      perf: 0,
-      cash: 0,
-      stress: 0,
+<div class="cardBtn" onclick="play('mock')">
+<b class="blue">비꼼</b>
+멘탈 타격<br>+콤보
+</div>
 
-      perClickBase: 1,
-      perSecBase: 0,
+<div class="cardBtn" onclick="play('shift')">
+<b class="yellow">논점흐리기</b>
+주제 변경<br>+방어
+</div>
 
-      promoDiscount: 0, // reduces threshold
-      interns: 0,
+<div class="cardBtn" onclick="play('logic')">
+<b class="green">논리반박</b>
+정공법<br>+안정
+</div>
 
-      vip: false,
-      adBoostUntil: 0, // timestamp ms
+<div class="cardBtn" onclick="play('rage')">
+<b class="red">분노폭발</b>
+한방딜<br>리스크
+</div>
 
-      shopCounts: Object.fromEntries(SHOP.map(s=>[s.id,0])),
-      log: [],
-      lastSaved: 0,
-      lastTick: Date.now()
-    });
+<div class="cardBtn" onclick="play('ignore')">
+<b class="blue">무시</b>
+쿨찐모드<br>회복
+</div>
 
-    let state = loadState();
+</div>
 
-    // ====== UI Elements ======
-    const el = (id)=>document.getElementById(id);
-    const rankNameEl = el("rankName");
-    const perClickEl = el("perClick");
-    const perSecEl = el("perSec");
-    const stressEl = el("stressVal");
-    const promoBar = el("promoBar");
-    const promoText = el("promoText");
-    const moneyBadge = el("moneyBadge");
-    const cashPill = el("cashPill");
-    const logBox = el("logBox");
-    const eventPill = el("eventPill");
-    const vipPill = el("vipPill");
+<div class="footer">
+• 목표: 상대 여론 0% 만들기<br>
+• 연속 성공 시 콤보 보너스
+</div>
 
-    const shopList = el("shopList");
-    const toast = el("toast");
-    const dim = el("dim");
+</section>
 
-    // Buttons
-    el("btnWork").addEventListener("click", ()=>doWorkClick());
-    el("btnNap").addEventListener("click", ()=>takeBreak());
-    el("btnAdBoost").addEventListener("click", ()=>adBoostMock());
-    el("btnManualSave").addEventListener("click", ()=>{saveState(); toastMsg("저장 완료.");});
-    el("btnReset").addEventListener("click", ()=>resetAll());
-    el("btnExport").addEventListener("click", ()=>exportSave());
-    el("btnImport").addEventListener("click", ()=>importSave());
-    el("btnVip").addEventListener("click", ()=>toggleVip());
-    el("btnHow").addEventListener("click", ()=>openModal(true));
-    el("btnClose").addEventListener("click", ()=>openModal(false));
-    dim.addEventListener("click", (e)=>{ if(e.target === dim) openModal(false); });
+<!-- RIGHT -->
+<aside class="card">
 
-    // Donate link placeholder
-    el("donateLink").addEventListener("click", (e)=>{
-      e.preventDefault();
-      toastMsg("후원 링크를 본인 링크로 교체하세요. (코드에서 donateLink 검색)");
-    });
+<b>전쟁 로그</b>
+<div class="log" id="log"></div>
 
-    // ====== Helpers ======
-    function fmtNum(n){
-      if (!isFinite(n)) return "0";
-      const abs = Math.abs(n);
-      if (abs >= 1e12) return (n/1e12).toFixed(2) + "T";
-      if (abs >= 1e9)  return (n/1e9).toFixed(2) + "B";
-      if (abs >= 1e6)  return (n/1e6).toFixed(2) + "M";
-      if (abs >= 1e3)  return (n/1e3).toFixed(2) + "K";
-      return Math.floor(n).toString();
-    }
-    function fmtKRW(n){
-      n = Math.floor(n);
-      return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + "원";
-    }
-    function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
-    function now(){ return Date.now(); }
+</aside>
 
-    function toastMsg(msg){
-      toast.textContent = msg;
-      toast.classList.add("on");
-      clearTimeout(toast._t);
-      toast._t = setTimeout(()=>toast.classList.remove("on"), 1500);
-    }
+</div>
+</div>
 
-    function logPush(text){
-      const t = new Date().toLocaleTimeString("ko-KR", {hour:"2-digit", minute:"2-digit", second:"2-digit"});
-      state.log.unshift({t, text});
-      if (state.log.length > 60) state.log.length = 60;
-      renderLog();
-    }
+<script>
+let me=50, enemy=50;
+let rage=0, combo=0;
+let turn=1;
 
-    // ====== Efficiency / Stress ======
-    function stressCap(){
-      return RANKS[state.rankIdx].stressCap + (state.vip ? 20 : 0);
-    }
-    function efficiency(){
-      // stress increases reduce efficiency.
-      // at low stress: ~1.0; high stress: down to ~0.35
-      const cap = stressCap();
-      const s = clamp(state.stress, 0, cap);
-      const ratio = s / cap;
-      const base = 1 - ratio * 0.55; // 1.0 -> 0.45
-      const vipBonus = state.vip ? 0.08 : 0;
-      return clamp(base + vipBonus, 0.35, 1.12);
-    }
-    function adBoostMult(){
-      return (state.adBoostUntil && now() < state.adBoostUntil) ? 2.2 : 1.0;
-    }
+const logBox=document.getElementById("log");
 
-    // ====== Derived stats ======
-    function perClick(){
-      const rankBonus = RANKS[state.rankIdx].bonusClick;
-      const vipMul = state.vip ? 1.15 : 1.0;
-      return (state.perClickBase + rankBonus) * vipMul;
-    }
-    function perSec(){
-      const rankBonus = RANKS[state.rankIdx].bonusSec;
-      const vipMul = state.vip ? 1.2 : 1.0;
-      return (state.perSecBase + rankBonus) * vipMul;
-    }
-    function threshold(){
-      const raw = RANKS[state.rankIdx].threshold;
-      const disc = clamp(state.promoDiscount, 0, 0.45);
-      return Math.max(20, Math.floor(raw * (1 - disc)));
-    }
-    function salaryPerMonth(){
-      // base salary from rank, plus tiny scaling from interns
-      const base = RANKS[state.rankIdx].salary;
-      return Math.floor(base * (1 + state.interns * 0.02) * (state.vip ? 1.08 : 1.0));
-    }
+function log(msg){
+  const t=new Date().toLocaleTimeString();
+  const d=document.createElement("div");
+  d.className="line";
+  d.innerHTML=`<small>${t}</small><br>${msg}`;
+  logBox.prepend(d);
+}
 
-    // ====== Core Actions ======
-    function doWorkClick(){
-      const gain = perClick() * efficiency();
-      const mult = adBoostMult();
-      state.perf += gain * mult;
+function clamp(v){return Math.max(0,Math.min(100,v));}
 
-      // stress increases slowly when clicking
-      state.stress += 0.7 * (mult > 1 ? 0.9 : 1.0);
+function update(){
+  me=clamp(me); enemy=clamp(enemy);
 
-      // small random flavor
-      if (Math.random() < 0.06){
-        logPush(pick([
-          "보고서 문장 두 줄로 인생이 흔들린다.",
-          "회의가 늘어난다. 이유는 없다.",
-          "결재라인에서 ‘한 번만 더’가 찍혔다.",
-          "마감은 다가오고, 손은 빨라지고, 영혼은 멀어진다."
-        ]));
-      }
+  document.getElementById("me").innerText=me+"%";
+  document.getElementById("enemy").innerText=enemy+"%";
+  document.getElementById("rage").innerText=rage;
 
-      maybeEvent();
-      checkPromotion();
-      render();
-    }
+  document.getElementById("meBar").style.width=me+"%";
+  document.getElementById("enemyBar").style.width=enemy+"%";
 
-    function takeBreak(){
-      // reduces stress but costs time (small perf loss)
-      const reduced = 18 + Math.random()*10;
-      state.stress = Math.max(0, state.stress - reduced);
-      state.perf = Math.max(0, state.perf - (threshold() * 0.01));
-      logPush("커피 한 잔. 세상은 잠깐 조용해졌다. (스트레스 감소)");
-      render();
-    }
+  if(enemy<=0){
+    alert("🎉 여론전 승리!");
+    resetGame();
+  }
+  if(me<=0){
+    alert("💀 여론전 패배...");
+    resetGame();
+  }
+}
 
-    function adBoostMock(){
-      // simulated rewarded ad: add 10 minutes of boost
-      const addMs = 10 * 60 * 1000;
-      state.adBoostUntil = Math.max(state.adBoostUntil, now()) + addMs;
-      logPush("‘광고 시청 완료’ 처리됨. 10분 동안 속도 부스트!");
-      toastMsg("부스트 적용! (10분 연장)");
-      render();
-    }
+function enemyTurn(){
+  const r=Math.random();
 
-    function toggleVip(){
-      state.vip = !state.vip;
-      vipPill.textContent = state.vip ? "적용됨" : "미적용";
-      vipPill.className = state.vip ? "pill" : "pill-bad pill";
-      if (state.vip){
-        logPush("VIP 적용. ‘이제… 내가 룰이다.’");
-        toastMsg("VIP ON (테스트)");
-      } else {
-        logPush("VIP 해제. 다시 현실 복귀.");
-        toastMsg("VIP OFF");
-      }
-      render();
-    }
+  let dmg=5+Math.random()*8;
 
-    function checkPromotion(){
-      const th = threshold();
-      if (state.perf >= th){
-        if (state.rankIdx >= RANKS.length - 1){
-          // already CEO
-          state.perf = th; // cap
-          logPush("CEO는 더 못 올라간다. 대신 회사가 너를 먹는다.");
-          return;
-        }
-        const old = RANKS[state.rankIdx].name;
-        state.rankIdx += 1;
-        const cur = RANKS[state.rankIdx].name;
+  if(r<0.3){
+    me-=dmg;
+    log("💬 상대: '팩트는 니가 틀림ㅋㅋ'");
+  }else if(r<0.6){
+    me-=dmg*1.2;
+    log("💬 상대: '이걸 믿는 사람이 있냐?'");
+  }else{
+    enemy+=5;
+    log("💬 상대: '본질은 이게 아니고요'");
+  }
+}
 
-        // promotion effect
-        state.perf = Math.max(0, state.perf - th); // carryover
-        state.stress += 18 + state.rankIdx * 2;
+function play(type){
 
-        logPush(`승진! ${old} → ${cur}. (스트레스 상승, 급여 상승)`);
-        toastMsg(`승진! ${cur}`);
-      }
-    }
+  let dmg=0;
 
-    // ====== Random Events ======
-    function maybeEvent(){
-      // event chance depends on stress and interns count
-      const cap = stressCap();
-      const sRatio = clamp(state.stress/cap, 0, 1);
-      let p = 0.012 + sRatio*0.03 + state.interns*0.002;
-      if (state.vip) p *= 0.85;
+  switch(type){
 
-      if (Math.random() < p){
-        const e = rollEvent(sRatio);
-        applyEvent(e);
-      }
-    }
+    case "fact":
+      dmg=10+combo*2;
+      enemy-=dmg;
+      rage+=4;
+      combo++;
+      log(`🔥 팩폭! 상대 여론 -${dmg}%`);
+      break;
 
-    function rollEvent(sRatio){
-      const hard = sRatio > 0.62;
-      const pool = hard ? HARD_EVENTS : NORMAL_EVENTS;
-      return pool[Math.floor(Math.random()*pool.length)];
-    }
+    case "mock":
+      dmg=7+combo*3;
+      enemy-=dmg;
+      rage+=3;
+      combo++;
+      log(`😏 비꼼 성공! 멘탈 박살 (-${dmg}%)`);
+      break;
 
-    const NORMAL_EVENTS = [
-      {
-        name:"갑자기 회의",
-        tag:"회의",
-        effect(){
-          const loss = threshold()*0.03;
-          state.perf = Math.max(0, state.perf - loss);
-          state.stress += 10;
-          logPush("갑자기 회의 소집. 결론은 ‘다음 회의에서’. (성과↓, 스트레스↑)");
-        }
-      },
-      {
-        name:"칭찬 한 줄",
-        tag:"칭찬",
-        effect(){
-          const g = threshold()*0.05;
-          state.perf += g;
-          state.stress = Math.max(0, state.stress - 6);
-          logPush("상사가 툭 던졌다. ‘수고했어.’ 그 한 줄로 하루가 산다. (성과↑, 스트레스↓)");
-        }
-      },
-      {
-        name:"인턴 사고",
-        tag:"사고",
-        effect(){
-          const g = threshold()*0.02;
-          const s = 8 + state.interns*2;
-          state.perf += g;
-          state.stress += s;
-          logPush("인턴이 파일명을 ‘최종_진짜최종_찐최종’으로 저장했다. 그래도… 해결은 됐다. (성과↑, 스트레스↑)");
-        }
-      },
-      {
-        name:"야근 확정",
-        tag:"야근",
-        effect(){
-          state.stress += 16;
-          logPush("야근 확정. 달력에 빨간 글씨가 늘어났다. (스트레스↑)");
-        }
-      }
-    ];
+    case "shift":
+      me+=6; enemy-=4;
+      rage+=2;
+      combo=0;
+      log("🌀 논점 변경! 분위기 장악");
+      break;
 
-    const HARD_EVENTS = [
-      {
-        name:"임원 갑질",
-        tag:"갑질",
-        effect(){
-          const loss = threshold()*0.08;
-          state.perf = Math.max(0, state.perf - loss);
-          state.stress += 22;
-          logPush("임원이 말했다. ‘그건 니가 책임져.’ 논리? 없다. (성과↓, 스트레스↑↑)");
-        }
-      },
-      {
-        name:"책임 전가",
-        tag:"정치",
-        effect(){
-          const loss = threshold()*0.06;
-          state.perf = Math.max(0, state.perf - loss);
-          state.stress += 18;
-          logPush("누군가의 실수가 네 메신저로 넘어왔다. ‘이거 네 건데?’ (성과↓, 스트레스↑)");
-        }
-      },
-      {
-        name:"긴급 보고서",
-        tag:"긴급",
-        effect(){
-          const g = threshold()*0.09;
-          state.perf += g;
-          state.stress += 20;
-          logPush("긴급 보고서. 손은 빨랐고, 정신은 멀어졌다. (성과↑↑, 스트레스↑↑)");
-        }
-      },
-      {
-        name:"현타",
-        tag:"현타",
-        effect(){
-          state.stress += 30;
-          logPush("문득 든 생각. ‘내가 여기서 뭐 하지…’ (스트레스↑↑↑)");
-        }
-      }
-    ];
+    case "logic":
+      dmg=6+combo;
+      enemy-=dmg;
+      me+=4;
+      combo++;
+      log("📚 논리 반박! 신뢰도 상승");
+      break;
 
-    function applyEvent(e){
-      eventPill.textContent = `이벤트: ${e.tag}`;
-      e.effect();
-      setTimeout(()=>{ eventPill.textContent = "이벤트: 대기"; }, 1200);
-      render();
-    }
-
-    function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-
-    // ====== Shop ======
-    function shopCost(item){
-      const c = state.shopCounts[item.id] || 0;
-      return Math.floor(item.baseCost * Math.pow(item.costMul, c));
-    }
-
-    function buy(itemId){
-      const item = SHOP.find(s=>s.id===itemId);
-      if (!item) return;
-      const cost = shopCost(item);
-      if (state.cash < cost){
-        toastMsg("현금이 부족합니다.");
+    case "rage":
+      if(rage<10){
+        log("❌ 분노 부족!");
         return;
       }
-      state.cash -= cost;
-      state.shopCounts[item.id] = (state.shopCounts[item.id]||0) + 1;
-      item.effect(state);
-      logPush(`${item.name} 구매 완료. (${item.pill})`);
-      checkPromotion();
-      renderShop();
-      render();
-    }
+      dmg=25+Math.random()*10;
+      enemy-=dmg;
+      me-=8;
+      rage=0;
+      combo=0;
+      log(`💥 분노폭발! 초강타 -${dmg}%`);
+      break;
 
-    function renderShop(){
-      shopList.innerHTML = "";
-      SHOP.forEach(item=>{
-        const count = state.shopCounts[item.id] || 0;
-        const cost = shopCost(item);
+    case "ignore":
+      me+=8;
+      rage=Math.max(0,rage-4);
+      combo=0;
+      log("😌 무시. 멘탈 회복");
+      break;
+  }
 
-        const div = document.createElement("div");
-        div.className = "item";
-        div.innerHTML = `
-          <div class="left">
-            <div class="name">${item.name} <span class="pill" style="margin-left:6px">${count}개</span></div>
-            <div class="desc">${item.desc}</div>
-          </div>
-          <div class="right">
-            <span class="price">${fmtKRW(cost)}</span>
-            <button class="btn btn-accent">구매</button>
-          </div>
-        `;
-        div.querySelector("button").addEventListener("click", ()=>buy(item.id));
-        shopList.appendChild(div);
-      });
-    }
+  enemyTurn();
+  update();
+}
 
-    // ====== Tick Loop ======
-    function tick(){
-      const t = now();
-      const dt = Math.min(0.25, Math.max(0, (t - state.lastTick)/1000)); // clamp seconds
-      state.lastTick = t;
+function resetGame(){
+  me=50; enemy=50;
+  rage=0; combo=0;
+  logBox.innerHTML="";
+  log("새로운 댓글 전쟁 시작");
+  update();
+}
 
-      // idle gains
-      const mult = adBoostMult();
-      const eff = efficiency();
-      state.perf += perSec() * eff * dt * mult;
-
-      // salary accrual: monthly salary spread over time
-      const salary = salaryPerMonth();
-      const perSecSalary = salary / (30*24*3600); // approximate 30-day month
-      state.cash += perSecSalary * dt;
-
-      // stress drift: slowly down if low activity, but increases if high (simulated)
-      // Here: very slight natural recovery
-      state.stress = Math.max(0, state.stress - 0.08 * dt);
-
-      // occasional events
-      if (Math.random() < 0.01*dt*4){
-        maybeEvent();
-      }
-
-      checkPromotion();
-
-      // autosave every 10s
-      if (t - state.lastSaved > 10000){
-        saveState();
-      }
-
-      render();
-      requestAnimationFrame(tick);
-    }
-
-    // ====== Render ======
-    function render(){
-      // Clamp stress
-      state.stress = clamp(state.stress, 0, stressCap());
-
-      const rank = RANKS[state.rankIdx];
-      rankNameEl.textContent = rank.name;
-
-      const pc = perClick();
-      const ps = perSec();
-      perClickEl.textContent = "+" + (pc * efficiency() * adBoostMult()).toFixed(2);
-      perSecEl.textContent = "+" + (ps * efficiency() * adBoostMult()).toFixed(2);
-
-      stressEl.textContent = Math.floor(state.stress).toString();
-
-      // Promotion progress
-      const th = threshold();
-      const p = clamp(state.perf, 0, th);
-      promoText.textContent = `성과 ${fmtNum(p)} / ${fmtNum(th)} (효율 ${(efficiency()*100).toFixed(0)}%)`;
-      promoBar.style.width = (p/th*100).toFixed(1) + "%";
-
-      const salary = salaryPerMonth();
-      moneyBadge.textContent = "급여: " + fmtKRW(salary) + "/월";
-
-      cashPill.textContent = "현금: " + fmtKRW(state.cash);
-      vipPill.textContent = state.vip ? "적용됨" : "미적용";
-      vipPill.className = state.vip ? "pill" : "pill-bad pill";
-
-      // If adboost
-      if (state.adBoostUntil && now() < state.adBoostUntil){
-        const left = Math.ceil((state.adBoostUntil - now())/1000);
-        eventPill.textContent = `부스트: ${left}s`;
-      }
-
-      renderLog();
-    }
-
-    function renderLog(){
-      logBox.innerHTML = "";
-      const items = state.log.slice(0, 30);
-      if (items.length === 0){
-        const empty = document.createElement("div");
-        empty.className = "logline";
-        empty.innerHTML = `<small>아직 아무 일도 없다.</small><br/>업무를 처리해보자.`;
-        logBox.appendChild(empty);
-        return;
-      }
-      items.forEach(x=>{
-        const div = document.createElement("div");
-        div.className = "logline";
-        div.innerHTML = `<small>${x.t}</small><br/>${escapeHtml(x.text)}`;
-        logBox.appendChild(div);
-      });
-    }
-
-    function escapeHtml(s){
-      return s.replace(/[&<>"']/g, (c)=>({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-      }[c]));
-    }
-
-    // ====== Save / Load ======
-    function saveState(){
-      try{
-        state.lastSaved = now();
-        localStorage.setItem(LS_KEY, JSON.stringify(state));
-      }catch(e){}
-    }
-
-    function loadState(){
-      try{
-        const raw = localStorage.getItem(LS_KEY);
-        if (!raw) return defaultState();
-        const parsed = JSON.parse(raw);
-
-        // merge with defaults for forward compatibility
-        const d = defaultState();
-        const merged = Object.assign(d, parsed);
-        merged.shopCounts = Object.assign(d.shopCounts, parsed.shopCounts || {});
-        merged.log = Array.isArray(parsed.log) ? parsed.log : [];
-        merged.lastTick = now();
-        return merged;
-      }catch(e){
-        return defaultState();
-      }
-    }
-
-    function resetAll(){
-      if (!confirm("정말 초기화할까요? (저장 데이터가 삭제됩니다)")) return;
-      state = defaultState();
-      saveState();
-      renderShop();
-      logPush("새 출근. 새 절망. 새 시작.");
-      render();
-      toastMsg("초기화 완료");
-    }
-
-    function exportSave(){
-      try{
-        saveState();
-        const data = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
-        navigator.clipboard?.writeText(data);
-        toastMsg("세이브가 클립보드에 복사됨!");
-        logPush("세이브 내보내기 완료. (문자열을 어딘가에 보관해라)");
-      }catch(e){
-        toastMsg("복사 실패. 브라우저 권한을 확인하세요.");
-      }
-    }
-
-    function importSave(){
-      const data = prompt("세이브 문자열을 붙여넣기:");
-      if (!data) return;
-      try{
-        const json = decodeURIComponent(escape(atob(data.trim())));
-        const obj = JSON.parse(json);
-        state = Object.assign(defaultState(), obj);
-        state.lastTick = now();
-        saveState();
-        renderShop();
-        render();
-        toastMsg("불러오기 완료!");
-        logPush("세이브 불러오기 성공. 다시 출근했다.");
-      }catch(e){
-        toastMsg("불러오기 실패. 문자열이 올바른지 확인하세요.");
-      }
-    }
-
-    function openModal(on){
-      dim.style.display = on ? "flex" : "none";
-    }
-
-    // ====== Init ======
-    renderShop();
-    if (state.log.length === 0) logPush("출근 체크. 오늘도 살아남아라.");
-    render();
-    requestAnimationFrame(tick);
-
-    // ====== Customize points (you edit here) ======
-    // 1) 후원 링크 바꾸기:
-    //    document.getElementById("donateLink").href = "https://본인후원링크";
-    // 2) 배너 광고 넣기: adbox 위치에 애드 네트워크 스크립트 삽입
-    // 3) 보상형 광고: adBoostMock()에서 실제 광고 완료 콜백으로 교체
-  </script>
+resetGame();
+</script>
 </body>
 </html>
-```
